@@ -221,6 +221,8 @@ else
     EP_PARALLEL_SIZE=$EP_SIZE
 fi
 
+echo "EP_PARALLEL_SIZE = ${EP_PARALLEL_SIZE}"
+
 ## Original GPT-3 model always set min LR at 10% of max LR. For MoE model, we
 ## found that lower LR and min LR (than the base dense model) helps.
 ## For 1.3B MoE-128 model we used LR=1.2e-4 and MIN_LR=1.0e-6.
@@ -329,16 +331,12 @@ megatron_options=" \
     --adam-beta1 0.9 \
     --adam-beta2 0.95 \
     --tensor-model-parallel-size ${mp_size}  \
-    
-    ### MoE ###
     --moe-expert-parallel-size ${EP_PARALLEL_SIZE} \
     --num-experts ${EP_SIZE} \
     --moe-loss-coeff ${MLC} \
     --moe-train-capacity-factor ${MOE_TRAIN_CAP_FACTOR} \
     --moe-eval-capacity-factor ${MOE_EVAL_CAP_FACTOR} \
     --moe-min-capacity ${MOE_MIN_CAP} \
-    ###########
-    
     --init-method-std ${init_std} \
     --lr-decay-tokens ${lr_decay_tokens} \
     --lr-warmup-tokens ${lr_warmup_tokens} \
