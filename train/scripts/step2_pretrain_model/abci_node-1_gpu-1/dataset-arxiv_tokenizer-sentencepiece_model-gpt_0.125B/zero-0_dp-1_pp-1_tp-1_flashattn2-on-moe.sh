@@ -61,14 +61,14 @@ seq_len=2048
 ## provide better zero-shot eval results.
 
 ## GPT-3 Small 125M
-model_size=0.125
-num_layers=12
-hidden_size=768
-num_attn_heads=12
-global_batch_size=256
-lr=6.0e-4
-min_lr=1.0e-6
-init_std=0.02
+# model_size=0.125
+# num_layers=12
+# hidden_size=768
+# num_attn_heads=12
+# global_batch_size=256
+# lr=6.0e-4
+# min_lr=1.0e-6
+# init_std=0.02
 
 ## GPT-3 Medium 350M
 # model_size=0.35
@@ -91,14 +91,14 @@ init_std=0.02
 # init_std=0.015
 
 ## GPT-3 XL 1.3B
-# model_size=1.3
-# num_layers=24
-# hidden_size=2048
-# num_attn_heads=16
-# global_batch_size=512
-# lr=2.0e-4
-# min_lr=1.0e-6
-# init_std=0.013
+model_size=1.3
+num_layers=24
+hidden_size=2048
+num_attn_heads=16
+global_batch_size=512
+lr=2.0e-4
+min_lr=1.0e-6
+init_std=0.013
 
 ## GPT-3 2.7B
 # model_size=2.7
