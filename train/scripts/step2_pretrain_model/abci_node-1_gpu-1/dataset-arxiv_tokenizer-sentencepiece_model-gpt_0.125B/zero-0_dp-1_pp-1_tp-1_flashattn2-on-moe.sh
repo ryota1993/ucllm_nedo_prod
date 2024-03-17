@@ -207,6 +207,42 @@ dp_size=$(( ${num_gpus} / ${pp_size} / ${mp_size} ))
 ## Reduce it manually if GPU OOM
 batch_size=$(( ${global_batch_size} / ${dp_size} ))
 # batch_size=2
+
+###############################################################################
+# https://github.com/microsoft/Megatron-DeepSpeed/blob/main/examples_deepspeed/MoE/ds_pretrain_gpt_125M_MoE64.sh
+### MoE configs
+## Number of experts. EP_SIZE 1 means dense model without MoE
+# EP_SIZE=1
+EP_SIZE=16
+
+if [[ $EP_SIZE -gt $NUM_GPUS ]]; then
+    EP_PARALLEL_SIZE=$NUM_GPUS
+else
+    EP_PARALLEL_SIZE=$EP_SIZE
+fi
+
+## Original GPT-3 model always set min LR at 10% of max LR. For MoE model, we
+## found that lower LR and min LR (than the base dense model) helps.
+## For 1.3B MoE-128 model we used LR=1.2e-4 and MIN_LR=1.0e-6.
+## For 350M MoE-128 model we used LR=2.0e-4 and MIN_LR=2.0e-6, but they are not
+## heavily tuned.
+#LR=4.5e-4
+#MIN_LR=4.5e-06
+
+## Coefficient for MoE loss. We find that 0.01 is a good value at least for
+## 1.3B MoE-128 model
+MLC=0.01
+
+## Below configs adjust the MoE expert token capacity limit during training and
+## eval. To completely disable capacity limit, set MOE_DROP_TOKEN to false.
+## Larger capacity factor or disabling capacity limit could improve training
+## convergence, but will also reduce training throughput.
+MOE_TRAIN_CAP_FACTOR=1.0
+MOE_EVAL_CAP_FACTOR=1.0
+MOE_MIN_CAP=4
+MOE_DROP_TOKEN="true"
+# MOE_DROP_TOKEN="false"
+
 ###############################################################################
 ### Misc configs
 log_interval=10
@@ -292,7 +328,17 @@ megatron_options=" \
     --override-opt_param-scheduler \
     --adam-beta1 0.9 \
     --adam-beta2 0.95 \
-    --tensor-model-parallel-size ${mp_size} \
+    --tensor-model-parallel-size ${mp_size}  \
+    
+    ### MoE ###
+    --moe-expert-parallel-size ${EP_PARALLEL_SIZE} \
+    --num-experts ${EP_SIZE} \
+    --moe-loss-coeff ${MLC} \
+    --moe-train-capacity-factor ${MOE_TRAIN_CAP_FACTOR} \
+    --moe-eval-capacity-factor ${MOE_EVAL_CAP_FACTOR} \
+    --moe-min-capacity ${MOE_MIN_CAP} \
+    ###########
+    
     --init-method-std ${init_std} \
     --lr-decay-tokens ${lr_decay_tokens} \
     --lr-warmup-tokens ${lr_warmup_tokens} \
@@ -334,6 +380,24 @@ if [ "${activation_checkpoint}" = "true" ]; then
 megatron_options="${megatron_options} \
     --checkpoint-activations"
 fi
+
+### MoE ###
+if [[ $EP_SIZE -gt 1 ]]; then
+megatron_options="${megatron_options} \
+        --create-moe-param-group"
+fi
+
+if [ "${MOE_DROP_TOKEN}" = "false" ]; then
+megatron_options="${megatron_options} \
+        --disable-moe-token-dropping"
+fi
+
+# Currently MoE is not compatible with pipeline parallel
+if [[ $EP_SIZE -gt 1 ]]; then
+deepspeed_options="${deepspeed_options} \
+        --no-pipeline-parallel"
+fi
+############
 
 if [ "${log_optimizer_state}" = "true" ]; then
 megatron_options="${megatron_options} \
