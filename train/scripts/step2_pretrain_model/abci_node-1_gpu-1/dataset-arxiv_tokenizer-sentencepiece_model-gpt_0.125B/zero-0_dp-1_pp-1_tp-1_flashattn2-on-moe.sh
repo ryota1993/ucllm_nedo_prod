@@ -214,12 +214,13 @@ batch_size=$(( ${global_batch_size} / ${dp_size} ))
 ## Number of experts. EP_SIZE 1 means dense model without MoE
 # EP_SIZE=1
 EP_SIZE=16
+EP_PARALLEL_SIZE=1
 
-if [[ $EP_SIZE -gt $NUM_GPUS ]]; then
-    EP_PARALLEL_SIZE=$NUM_GPUS
-else
-    EP_PARALLEL_SIZE=$EP_SIZE
-fi
+# if [[ $EP_SIZE -gt $NUM_GPUS ]]; then
+#     EP_PARALLEL_SIZE=$NUM_GPUS
+# else
+#     EP_PARALLEL_SIZE=$EP_SIZE
+# fi
 
 echo "EP_PARALLEL_SIZE = ${EP_PARALLEL_SIZE}"
 
